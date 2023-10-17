@@ -1,0 +1,41 @@
+version: '3'
+services:
+    db:
+        container_name: mysql-5.7
+        image: mysql:5.7
+        restart: always
+        ports:
+            - "32000:3306"
+        environment:
+            MYSQL_DATABASE: test
+            MYSQL_ROOT_PASSWORD: root
+        volumes:
+            - ./db:/docker-entrypoint-initdb.d/:ro
+
+    web:
+        container_name: flask-test
+        build: .
+        ports:
+            - "5000:5000"
+        depends_on:
+            - db
+        environment:
+            FLASK_DEBUG : true
+            FLASK_APP : index.py
+            DB_DATABASE: test
+            DB_HOST: db
+            DB_PASSWORD: "root"
+            DB_USER: "root"
+            DB_PORT: 3306
+        restart: on-failure
+        volumes:
+            - .:/python-docker
+        command: >
+            /bin/sh -c "
+                echo Waiting for db service start...;
+                while ! nc -z db 3306;
+                do
+                sleep 1;
+                done;
+                echo Connected!;
+            "
